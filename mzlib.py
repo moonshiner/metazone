@@ -9,7 +9,9 @@ import base64
 import hashlib
 import functools
 import yaml
+import textwrap
 import sys
+import io
 
 #
 # mzlib: functions helpful for metazone creation/interpretation
@@ -66,7 +68,6 @@ def resolve_a(name: str, iptype: int = 4, debug: bool = False) -> str:
     """
     Generate answers for DNS A lookups, including fast bogus answers for debugging
     """
-    print(name, iptype, debug)
     if debug:
         h = hashlib.sha1(e8(name)).digest()  # produces something that "looks like" an IP but fully reproducable
         if iptype == 4:
@@ -186,7 +187,7 @@ def careful_gen_eval(yaml: str, key: str, search_path: str) -> str:
     """
     Carefully allow some limited python expressions in data
     """
-    safe_things = {'yaml': yaml, 'search': search_path, 'lookup': lookup, 'nsg': nsg}
+    safe_things = {'yaml': yaml, 'search': search_path, 'lookup': lookup}
     return str(eval(key, {'__builtins__': None}, safe_things))
 
 
@@ -204,14 +205,14 @@ def single_lookup(yaml: str, key: str, search_path: str, preferv4: bool = False,
     """
     try:
         ind = key.find(":")
-    except:
+    except Exception:
         ind = -1
     if ind >= 0:
         (method, ws) = key.split(":", 1)
         if method == "key":
             return lookup(yaml, ws, search_path)
         if method == "eval":
-            return careful_gen_eval(yaml, ws, search_path) 
+            return careful_gen_eval(yaml, ws, search_path)
         if method == "host":
             return search_address(ws, search_path, preferv4, debug)
         if method == "collect":
@@ -228,7 +229,7 @@ def lookup(yaml: str, key: str, search_path: str, preferv4: bool = False, debug:
     key = str(key)
     try:
         mk = key.split(' ')
-    except:
+    except Exception:
         return single_lookup(yaml, key, search_path, preferv4, debug)
     result = []
     for sk in mk:
@@ -258,21 +259,129 @@ def apl_singleton(ip: str) -> str:
     """
     try:
         ind = ip.find(":")  # IPv6?
-    except:
+    except Exception:
         ind = -1
     if ind >= 0:
-        prefix = "1:"
-    else:
         prefix = "2:"
+    else:
+        prefix = "1:"
     try:
         ind = ip.index("/")  # mask included?
-    except:
+    except Exception:
         ind = -1
         if prefix == "1:":
             ip += "/32"
         else:
             ip += "/128"
     return prefix + ip
+
+
+def break_apl_singleton(apl: str) -> str:
+    """
+    Pull APL entry apart, returning IPv4 or IPv6 nugget without mask
+    """
+    (ipver, remainder) = apl.split(":", 1)
+    (ipaddr, mask) = remainder.split("/", 1)
+    return ipaddr
+
+
+def break_apl_net(apl: str) -> str:
+    """
+    Pull APL entry apart, returning IPv4 or IPv6 nugget with mask
+    """
+    (ipver, remainder) = apl.split(":", 1)
+    return remainder
+
+
+def break_apl_netset(apl: str) -> str:
+    """
+    Pull APL set apart, returning all IPv4 or IPv6 nuggets with mask
+    """
+    result = []
+    for itm in apl.split(" "):
+        result.append(break_apl_net(itm))
+    return "; ".join(result)
+
+
+def break_apl_singleset(apl: str) -> str:
+    """
+    Pull APL set apart, returning all IPv4 or IPv6 nuggets without mask - BIND masters
+    """
+    result = []
+    for itm in apl.split(" "):
+        result.append(break_apl_singleton(itm))
+    return "; ".join(result)
+
+
+def fixup_acl(acl: str) -> str:
+    """
+    Replace standard ip/mask entries with "none" and "any" if present
+    """
+    if acl == "255.255.255.255/32":
+        acl = "none"
+    if acl == "0.0.0.0/0":
+        acl = "any"
+    return acl
+
+
+def emit_acl(fp: io.IOBase, aclname: str, acllist: str) -> None:
+    """
+    Standardize writing BIND ACL to file
+    """
+    lines = textwrap.wrap(acllist)
+    fp.write(str.format('acl "{0}" {{', aclname))  # double open brace for str.format
+    for itm in lines:
+        fp.write("\n " + itm)
+    fp.write(";\n};\n\n")
+
+
+def emit_masters(fp: io.IOBase, aclname: str, acllist: str) -> None:
+    """
+    Standardize writing BIND "masters" stanza to file
+    """
+    lines = textwrap.wrap(acllist)
+    fp.write(str.format('masters "{0}" {{', aclname))  # double open brace for str.format
+    for itm in lines:
+        fp.write("\n " + itm)
+    fp.write(";\n};\n\n")
+
+
+def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowtransfer: str) -> None:
+    """
+    Produces BIND-compatible zone stanza, out to file
+    """
+    alsonotify = fixup_acl(alsonotify)
+    allowquery = fixup_acl(allowquery)
+    allowtransfer = fixup_acl(allowtransfer)
+    forward = fixup_acl(forward)
+
+    if forward == "none" and alsonotify == "none":
+        fp.write(str.format("""zone "{0}" {{
+    type slave;
+    masters {{ {3}; }};
+    file "zonecache.{0}";
+    allow-transfer {{ {1}; }};
+    allow-query {{ {2}; }};
+}};
+""", zonename, allowtransfer, allowquery, masters))
+    elif forward == "none":
+        fp.write(str.format("""zone "{0}" {{
+    type slave;
+    masters {{ {4}; }};
+    file "zonecache.{0}";
+    allow-transfer {{ {1}; }};
+    allow-query {{ {2}; }};
+    notify explicit;
+    also-notify {{ {3}; }};
+}};
+""", zonename, allowtransfer, allowquery, alsonotify, masters))
+    else:
+        fp.write(str.format("""zone "{0}" {{
+    type forward;
+    forward only;
+    forwarders {{ {1}; }};
+}};
+""", zonename, forward))
 
 
 def generate_single_apl(prefixes: str) -> str:
@@ -286,7 +395,7 @@ def generate_single_apl(prefixes: str) -> str:
             for sp in prefixes.split(" "):
                 result.append(apl_singleton(sp))
         return " ".join(result)
-    except:
+    except Exception:
         return apl_singleton(prefixes)
 
 
@@ -309,7 +418,7 @@ def generate_apl_list(yaml: str, thing: str, search_path: str) -> str:
                     result.append(generate_single_apl(itm))
                 return " ".join(result)
             return generate_single_apl(thing)
-        except:
+        except Exception:
             return generate_single_apl(thing)
     else:
         v = tree_lookup(yaml, thing)
@@ -339,7 +448,7 @@ def canonical_rr_format(yaml: str, rr: str, rrtype: str, search_path: str) -> st
         return rr
 
 
-def mz_emit_property(yaml: str, prpname: str, nsg: str, rrt: str, rrdata: str, search_path: str, rdatamax: int = 240) -> None:
+def mz_emit_property(fp: io.IOBase, yaml: str, prpname: str, nsg: str, rrt: str, rrdata: str, search_path: str, rdatamax: int = 240) -> None:
     """
     Function to emit RFC-1035 "master file" format data
     """
@@ -355,9 +464,9 @@ def mz_emit_property(yaml: str, prpname: str, nsg: str, rrt: str, rrdata: str, s
         rdatastr = " ".join(result)
         rdatastr = canonical_rr_format(yaml, rdatastr, rrt, search_path)
         if nsg == "":
-            print(str.format('{0} 3600 IN {1} {2}', prpname, rrt, rdatastr))
+            fp.write(str.format('{0} 3600 IN {1} {2}', prpname, rrt, rdatastr) + "\n")
         else:
-            print(str.format('{0}.{3} 3600 IN {1} {2}', prpname, rrt, rdatastr, nsg))
+            fp.write(str.format('{0}.{3} 3600 IN {1} {2}', prpname, rrt, rdatastr, nsg) + "\n")
 
 
 def read_property(zone: dns.zone.Zone, name: str) -> str:
@@ -414,7 +523,7 @@ def config_eval(key: str, d1: dict, d2: dict, d3: dict, namespace: str) -> str:
         ind = ans.find(":")
     except Exception:
         ind = -1
-    if i >= 0:
+    if ind >= 0:
         (method, st) = ans.split(":", 1)
         if method == "eval":
             return careful_node_eval(st, namespace)
@@ -426,6 +535,41 @@ def config_eval(key: str, d1: dict, d2: dict, d3: dict, namespace: str) -> str:
         return ans
 
 
+def gen_acl_hash(acl: str) -> str:
+    """
+    Generate an identifier for a unique ACL; this allows us to avoid re-emitting an ACL
+    and re-using already defined ones
+    """
+    return (hashlib.sha1(e8(acl)).hexdigest().lower())[0:8]
+
+
+def gen_acl_name(purpose: str, acllist: str, fp: io.IOBase, aclhash: dict) -> str:
+    """
+    Return ACL name generated for an ACL.  If this is the first time seeing the ACL,
+    create one, emit the ACL, and return new name
+    """
+    h = gen_acl_hash(acllist)
+    aclname = aclhash.get(h, None)
+    if aclname is None:
+        aclname = purpose + "-" + h
+        aclhash[h] = aclname
+        emit_acl(fp, aclname, acllist)
+    return aclname
+
+
+def gen_masters_name(purpose: str, acllist: str, fp: io.IOBase, masterhash: dict) -> str:
+    """
+    Repeat gen_acl_name pattern for "masters" style stanzas.
+    """
+    h = gen_acl_hash(acllist)
+    aclname = masterhash.get(h, None)
+    if aclname is None:
+        aclname = purpose + "-" + h
+        masterhash[h] = aclname
+        emit_masters(fp, aclname, acllist)
+    return aclname
+
+
 #############################################
 # Tests
 
@@ -433,10 +577,7 @@ def main():
 
     tests = (
         'foo.bar.testing.com.',
-        'foo.baz.testing.com.',
         'foo.bar.baz.testing.com.',
-        'foo.baz.baz.testing.com.',
-        'bar.bar.testing.com.',
         'bar.baz.testing.com.',
     )
 
@@ -451,10 +592,18 @@ def main():
 
     try:
         y = yaml.safe_load(open("metazone.yaml", "r"))
-    except:
+    except Exception:
         print("Error loading metazone.yaml\n")
         sys.exit(1)
+
     print("Defaults: ", lookup(y, "defaults", ""))
+    print("\n")
+
+    mz_emit_property(sys.stderr, y, 'masters', 'test', 'APL', '10.1.2.3', '', 240)
+
+    emit_acl(sys.stderr, 'acltest', break_apl_netset('1:10.2.3.4/32 1:10.2.3.5/32'))
+    emit_masters(sys.stderr, 'msttest', break_apl_singleset('1:10.2.3.6/32 1:10.2.3.7/32'))
+    emit_zone(sys.stderr, 'example.com', 'msttest', 'none', 'none', 'any', 'none')
 
 
 if __name__ == "__main__":
