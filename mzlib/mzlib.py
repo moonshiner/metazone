@@ -23,6 +23,7 @@ import io
 
 __path__ = ''
 
+
 def d8(s: str) -> str:
     """
     Decode Unicode string with stanard options

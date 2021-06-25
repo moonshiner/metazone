@@ -94,9 +94,8 @@ for zgname in yml['zone_groups']:
         lbl = cz_hash32(zn)
         mu = canonical_rr_format(yml, zn, 'PTR', '')
         print(str.format('{0}.{1} 3600 IN PTR {2}', lbl, zgname, mu))
-        print(str.format('{0:#0' + str(DIGITS) + 
-            'd}.zonelist.{1} 3600 IN CNAME {2}', zc, zgname, lbl + "." + 
-            zgname))
+        print(str.format('{0:#0' + str(DIGITS) + 'd}.zonelist.{1} 3600 IN CNAME {2}',
+              zc, zgname, lbl + "." + zgname))
         if ovr_props is not None:
             for itm in ovr_props.keys():
                 key = ovr_props[itm]
@@ -119,8 +118,8 @@ for nsg in yml['name_server_groups'].keys():
                 nlist = nsgd[itm]
                 nlist = lookup(yml, nlist, search_path, PREFERV4, DEBUG)
                 for ns in nlist.split(" "):
-                    print(str.format("{0} 3600 IN DNAME {1}.{2}.", ns, nsg, 
-                        ZONE))
+                    print(str.format("{0} 3600 IN DNAME {1}.{2}.", ns, nsg,
+                          ZONE))
             else:
                 rrtype = map_rrtype(itm)
                 try:
@@ -129,4 +128,4 @@ for nsg in yml['name_server_groups'].keys():
                 except Exception:
                     cfg = "LOOKUP ERROR: " + nsgd[itm]
                 mz_emit_property(sys.stdout, yml, itm, nsg, rrtype, cfg, search_path)
-
+# END OF LINE
