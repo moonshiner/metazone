@@ -21,6 +21,7 @@ import io
 #
 #
 
+__path__ = ''
 
 def d8(s: str) -> str:
     """
@@ -172,13 +173,13 @@ def fetch_subtree(yaml: str, key: str) -> str:
         yield node
 
 
-def subtree_collect(yaml: str, key: str, search_path: str) -> str:
+def subtree_collect(yaml: str, key: str, search_path: str, preferv4: bool = True, debug: bool = False) -> str:
     """
     Return all scalars in-and-under a node in the YAML tree
     """
     result = []
     for ele in fetch_subtree(yaml, key):
-        itm = lookup(yaml, ele, search_path)
+        itm = lookup(yaml, ele, search_path, preferv4, debug)
         result.append(str(itm))
     return " ".join(result)
 
@@ -199,7 +200,7 @@ def careful_node_eval(key: str, namespace: str) -> str:
     return str(eval(key, {'__builtins__': None}, safe_things))
 
 
-def single_lookup(yaml: str, key: str, search_path: str, preferv4: bool = False, debug: bool = False) -> str:
+def single_lookup(yaml: str, key: str, search_path: str, preferv4: bool = True, debug: bool = False) -> str:
     """
     Given a single key that might contain a method keyword, return appropriate scalar
     """
@@ -216,10 +217,12 @@ def single_lookup(yaml: str, key: str, search_path: str, preferv4: bool = False,
         if method == "host":
             return search_address(ws, search_path, preferv4, debug)
         if method == "collect":
-            return subtree_collect(yaml, ws, search_path)
+            return subtree_collect(yaml, ws, search_path, preferv4, debug)
+        if method == "delay":
+            return ws
         return key
     else:
-        return tree_lookup(yaml, key)
+        return key
 
 
 def lookup(yaml: str, key: str, search_path: str, preferv4: bool = False, debug: bool = False) -> str:

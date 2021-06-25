@@ -99,13 +99,13 @@ edge_zones:
  
 bridge_zones:
   east.bridge.example.com:
-    forward: eval:nsg!='east'
+    forward: delay:eval:nsg!='east'
     local-forward-list: fetch:local-bridge
   west.bridge.example.com:
-    forward: eval:nsg!='west'
+    forward: delay:eval:nsg!='west'
     local-forward-list: fetch:local-bridge
   south.bridge.example.com:
-    forward: eval:nsg!='south'
+    forward: delay:eval:nsg!='south'
     local-forward-list: fetch:local-bridge
 
 zones:
