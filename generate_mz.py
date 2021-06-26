@@ -26,9 +26,9 @@ parser.add_argument('--hname', default='metamgr.metazone.local',
                     help='default authority in metazone SOA')
 parser.add_argument('--digits', default='5',
                     help='Number of digits to count zones')
-parser.add_argument('--preferv4', default='true',
+parser.add_argument('--preferv4', default=True, action='store_false',
                     help='DNS lookups prefer V4 answers')
-parser.add_argument('--debug', default='false',
+parser.add_argument('--debug', default=False, action='store_true',
                     help='set debugging modes, spoof DNS lookups')
 args = parser.parse_args()
 
@@ -42,8 +42,8 @@ try:
 except Exception:
     DIGITS = 5
 
-PREFERV4 = True if args.preferv4 == "true" else False
-DEBUG = True if args.debug == "true" else False
+PREFERV4 = args.preferv4
+DEBUG = args.debug
 
 try:
     yml = yaml.safe_load(open(FILE, "r"))
@@ -59,19 +59,19 @@ except Exception:
 
 print(str.format("""
 ;
-$ORIGIN {0}
+$ORIGIN {0}.
 ;
 @ IN SOA {1} {2} {3} 900 300 604800 300
 ;
 """, ZONE, MNAME, HNAME, SERIAL))
 print(str.format(""";
-@ IN NS ns1.invalid.
+  IN NS ns1.{0}.
 ;
 version IN TXT "3"
 ;
 ; DEFAULTS
 ;
-"""))
+""", ZONE))
 for key in yml['defaults'].keys():
     print(str.format("""attribute 3600 IN PTR {0}""", key))
     rrtype = map_rrtype(key)

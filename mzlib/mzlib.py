@@ -284,6 +284,8 @@ def break_apl_singleton(apl: str) -> str:
     """
     Pull APL entry apart, returning IPv4 or IPv6 nugget without mask
     """
+    if apl == "":
+        return ""
     (ipver, remainder) = apl.split(":", 1)
     (ipaddr, mask) = remainder.split("/", 1)
     return ipaddr
@@ -293,8 +295,15 @@ def break_apl_net(apl: str) -> str:
     """
     Pull APL entry apart, returning IPv4 or IPv6 nugget with mask
     """
-    (ipver, remainder) = apl.split(":", 1)
-    return remainder
+    try:
+        ind = apl.find(":")
+    except Exception:
+        ind = -1
+    if ind >= 0:
+        (ipver, remainder) = apl.split(":", 1)
+        return remainder
+    else:
+        return apl
 
 
 def break_apl_netset(apl: str) -> str:
@@ -350,35 +359,38 @@ def emit_masters(fp: io.IOBase, aclname: str, acllist: str) -> None:
     fp.write(";\n};\n\n")
 
 
-def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowtransfer: str) -> None:
+def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowrecursion: str, allowtransfer: str) -> None:
     """
     Produces BIND-compatible zone stanza, out to file
     """
     alsonotify = fixup_acl(alsonotify)
     allowquery = fixup_acl(allowquery)
+    allowrecursion = fixup_acl(allowrecursion)
     allowtransfer = fixup_acl(allowtransfer)
     forward = fixup_acl(forward)
 
     if forward == "none" and alsonotify == "none":
         fp.write(str.format("""zone "{0}" {{
     type slave;
-    masters {{ {3}; }};
-    file "zonecache.{0}";
-    allow-transfer {{ {1}; }};
-    allow-query {{ {2}; }};
-}};
-""", zonename, allowtransfer, allowquery, masters))
-    elif forward == "none":
-        fp.write(str.format("""zone "{0}" {{
-    type slave;
     masters {{ {4}; }};
     file "zonecache.{0}";
     allow-transfer {{ {1}; }};
     allow-query {{ {2}; }};
-    notify explicit;
-    also-notify {{ {3}; }};
+    allow-recursion {{ {3}; }};
 }};
-""", zonename, allowtransfer, allowquery, alsonotify, masters))
+""", zonename, allowtransfer, allowquery, allowrecursion, masters))
+    elif forward == "none":
+        fp.write(str.format("""zone "{0}" {{
+    type slave;
+    masters {{ {5}; }};
+    file "zonecache.{0}";
+    allow-transfer {{ {1}; }};
+    allow-query {{ {2}; }};
+    allow-recursion {{ {3}; }};
+    notify explicit;
+    also-notify {{ {4}; }};
+}};
+""", zonename, allowtransfer, allowquery, allowrecursion, alsonotify, masters))
     else:
         fp.write(str.format("""zone "{0}" {{
     type forward;
@@ -482,7 +494,7 @@ def read_property(zone: dns.zone.Zone, name: str) -> str:
             if rdata.rdtype == 12 or rdata.rdtype == 5 or rdata.rdtype == 39:   # PTR, CNAME, or DNAME
                 for itm in rdata.items:
                     for ans in itm.target:
-                        yield ans
+                        yield d8(ans)
     finally:
         return
 
@@ -491,7 +503,10 @@ def text_rrset(rr: dns.rdatatype) -> str:
     """
     Return TXT rdata sections joined back together
     """
-    return " ".join(rr.strings)  # TODO space or zero string?
+    result = []
+    for itm in rr.strings:
+        result.append(d8(itm))
+    return " ".join(result)  # TODO space or zero string?
 
 
 def config_string(zone: dns.zone.Zone, name: str) -> str:
@@ -505,9 +520,9 @@ def config_string(zone: dns.zone.Zone, name: str) -> str:
         elif rdata.rdtype == 42:  # APL RR
             return " ".join(map(str, rdata.items))
         elif rdata.rdtype == 5:  # CNAME RR
-            return config_string(zone, str(rdata.items[0].target))
+            return config_string(zone, str(rdata[0].target))
         else:
-            return str(rdata.items[0])
+            return str(rdata[0])
 
 
 def config_lookup(key: str, d1: dict, d2: dict, d3: dict) -> str:
@@ -607,7 +622,7 @@ def main():
 
     emit_acl(sys.stderr, 'acltest', break_apl_netset('1:10.2.3.4/32 1:10.2.3.5/32'))
     emit_masters(sys.stderr, 'msttest', break_apl_singleset('1:10.2.3.6/32 1:10.2.3.7/32'))
-    emit_zone(sys.stderr, 'example.com', 'msttest', 'none', 'none', 'any', 'none')
+    emit_zone(sys.stderr, 'example.com', 'msttest', 'none', 'none', 'any', 'any', 'none')
 
 
 if __name__ == "__main__":

@@ -47,6 +47,7 @@ defaults:
   notify: false
   also-notify-list: 127.0.0.1
   allow-query: 10.0.0.0/8
+  allow-recursion: 10.0.0.0/8
   allow-transfer: collect:dns_servers
   forward: false
   forward-list: none

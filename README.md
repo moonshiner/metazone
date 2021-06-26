@@ -13,7 +13,9 @@ global defaults, name server group overrides, and per-zone overrides
 
 *metazone.yaml* contains an example YAML file, describing a secondary
 DNS grid with a few name server groups and some conditional
-forwarding cases.
+forwarding cases.  Since all the host names within it are invalid, you
+must run generate_mz.py with the --debug=true flag, which will spoof
+repeatable answers to A/AAAA queries.
 
 
 REQUIRED YAML ENTRIES:
