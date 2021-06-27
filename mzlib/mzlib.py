@@ -16,7 +16,7 @@ import io
 #
 # mzlib: functions helpful for metazone creation/interpretation
 #
-# LM: 2021-06-24 11:47:49-07:00
+# LM: 2021-06-27 09:43:42-07:00
 # Shawn Instenes <sinstenes@gmail.com>
 #
 #
@@ -36,6 +36,14 @@ def e8(s: str) -> str:
     Encode Unicode string with stanard options
     """
     return s.encode('utf-8', 'ignore')
+
+
+def enc_b64(val: str) -> str:
+    return d8(base64.b64encode(e8(val)))
+
+
+def dec_b64(val: str) -> str:
+    return d8(base64.b64decode(e8(val)))
 
 
 @functools.lru_cache(maxsize=2000)
@@ -232,6 +240,15 @@ def lookup(yaml: str, key: str, search_path: str, preferv4: bool = False, debug:
     """
     key = str(key)
     try:
+        ind = key.find(":")
+    except Exception:
+        ind = -1
+    if ind >= 0:
+        (method, ws) = key.split(":", 1)
+        if method == "b64":
+            return "b64:" + enc_b64(ws)
+    # Anything but base64 encoded thing
+    try:
         mk = key.split(' ')
     except Exception:
         return single_lookup(yaml, key, search_path, preferv4, debug)
@@ -330,6 +347,8 @@ def fixup_acl(acl: str) -> str:
     """
     Replace standard ip/mask entries with "none" and "any" if present
     """
+    if acl is None:
+        acl = "none"
     if acl == "255.255.255.255/32":
         acl = "none"
     if acl == "0.0.0.0/0":
@@ -548,6 +567,8 @@ def config_eval(key: str, d1: dict, d2: dict, d3: dict, namespace: str) -> str:
             return careful_node_eval(st, namespace)
         elif method == "fetch":
             return config_lookup(key, d1, d2, d3)
+        elif method == "b64":
+            return dec_b64(st)
         else:
             return ans
     else:
@@ -603,6 +624,10 @@ def main():
     print("cz_hash32 test:")
     for t in tests:
         print("node.%s 3600 IN PTR %s" % (cz_hash32(t), t))
+
+    x = enc_b64('hello')
+    print('B64e: ', x)
+    print('B64d: ', dec_b64(x))
 
     print("Test of ipv4 normal search: %s" % search_address("www.yahoo.com.", '', True, False))
     print("Test of ipv4 debug  search: %s" % search_address("www.yahoo.com.", '', True, True))

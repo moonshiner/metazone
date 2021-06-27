@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import argparse
 import dns.inet
@@ -167,26 +167,26 @@ for aclname in aclmap.keys():
 # here, as there is no per-zone override.
 #
 will_default_forward = config_lookup('default-foward', null_cfg, nsg_cfg, default_cfg)
-if will_default_forward is None or will_default_forward.lower() == "false":
-    default_forward_list = None
+if will_default_forward.lower() == "false":
+    default_forward_list = ''
 else:
     default_forward_list = config_lookup('default-foward-list', null_cfg, nsg_cfg, default_cfg)
-    if default_forward_list is not None:
+    if default_forward_list != '':
         default_forward_list = break_apl_singleset(default_forward_list)
 
-if default_forward_list is not None:
+if default_forward_list != '':
     mz_opts.write(str.format("\nforwarders {{ {0}; }}; forward-only;\n", default_forward_list))
 
 #
 # Looking for BIND-specific options/includes in the metazone, if any.  These will not
 # generally be honored by other back ends.
 #
-xtraopts = config_lookup('x-bind-opt', null_cfg, nsg_cfg, default_cfg)
-if xtraopts is not None:
+xtraopts = config_eval('x-bind-opt', null_cfg, nsg_cfg, default_cfg, my_namespace)
+if xtraopts != '':
     mz_opts.write(str.format("\n{0}\n", xtraopts))
 
-xtrainc = config_lookup('x-bind-inc', null_cfg, nsg_cfg, default_cfg)
-if xtrainc is not None:
+xtrainc = config_eval('x-bind-inc', null_cfg, nsg_cfg, default_cfg, my_namespace)
+if xtrainc != '':
     mz_inc.write(str.format("\n{0}\n", xtrainc))
 
 #
@@ -235,13 +235,13 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
 
         # Handle notify
         will_notify = config_lookup('notify', zone_cfg, nsg_cfg, default_cfg)
-        if will_notify is None or will_notify.lower() == "false":
-            also_notify = None
+        if will_notify == '' or will_notify.lower() == "false":
+            also_notify = ''
         else:
             also_notify = config_lookup("also-notify-list", zone_cfg, nsg_cfg, default_cfg)
-            if also_notify is not None:
+            if also_notify != '':
                 also_notify = break_apl_singleset(also_notify)
-        if also_notify is not None:
+        if also_notify != '':
             notify_list_name = gen_acl_name('notify', also_notify, mz_inc, acllists)
             also_notify = '"' + notify_list_name + '"'
 

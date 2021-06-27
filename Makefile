@@ -13,7 +13,7 @@ test.mz: metazone.yaml
 	./generate_mz.py --debug > test.mz
 
 test: test.mz
-	./bind_mz.py --file=test.mz --host 154.113.59.81 --debug
+	./bind_mz.py --file=test.mz --host 180.236.121.59 --debug
 
 testdbg: test.mz
-	pudb3 ./bind_mz.py --file=test.mz --host 154.113.59.81 --debug
+	pudb3 ./bind_mz.py --file=test.mz --host 180.236.121.59 --debug
