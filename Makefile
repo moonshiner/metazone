@@ -14,6 +14,7 @@ test.mz: metazone.yaml
 
 test: test.mz
 	./bind_mz.py --file=test.mz --host 180.236.121.59 --debug
+	sudo named-checkconf -t `pwd` -c example_named.conf
 
 testdbg: test.mz
 	pudb3 ./bind_mz.py --file=test.mz --host 180.236.121.59 --debug

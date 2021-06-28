@@ -243,7 +243,7 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             if also_notify != '':
                 also_notify = break_apl_singleset(also_notify)
         if also_notify != '':
-            notify_list_name = gen_acl_name('notify', also_notify, mz_inc, acllists)
+            notify_list_name = gen_masters_name('notify', also_notify, mz_inc, acllists)
             also_notify = '"' + notify_list_name + '"'
 
         # Handle forward.  Notice there is support for eval conditional
@@ -270,17 +270,6 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             acl_name = gen_acl_name('query', allow_query, mz_inc, acllists)
             allow_query = '"' + acl_name + '"'
 
-        # Handle recursion.
-        allow_recursion = config_eval("allow-recursion", zone_cfg, nsg_cfg, default_cfg, my_namespace)
-        if allow_recursion == '' or allow_recursion.lower() == "none":
-            allow_recursion = "none"
-        else:
-            allow_recursion = break_apl_netset(allow_recursion)
-            allow_recursion = fixup_acl(allow_recursion)
-        if allow_recursion != '' and allow_recursion != "none" and allow_recursion != "any":
-            acl_name = gen_acl_name('recursion', allow_recursion, mz_inc, acllists)
-            allow_recursion = '"' + acl_name + '"'
-
         # Handle transfer.
         allow_transfer = config_eval("allow-transfer", zone_cfg, nsg_cfg, default_cfg, my_namespace)
         if allow_transfer == '' or allow_transfer.lower() == "none":
@@ -293,7 +282,7 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             allow_transfer = '"' + acl_name + '"'
 
         # and now, the zone goes.
-        emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_recursion, allow_transfer)
+        emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_transfer)
 
 
 # END OF LINE

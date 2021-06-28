@@ -380,38 +380,35 @@ def emit_masters(fp: io.IOBase, aclname: str, acllist: str) -> None:
     fp.write(";\n};\n\n")
 
 
-def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowrecursion: str, allowtransfer: str) -> None:
+def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowtransfer: str) -> None:
     """
     Produces BIND-compatible zone stanza, out to file
     """
     alsonotify = fixup_acl(alsonotify)
     allowquery = fixup_acl(allowquery)
-    allowrecursion = fixup_acl(allowrecursion)
     allowtransfer = fixup_acl(allowtransfer)
     forward = fixup_acl(forward)
 
     if forward == "none" and alsonotify == "none":
         fp.write(str.format("""zone "{0}" {{
     type slave;
+    masters {{ {3}; }};
+    file "zonecache.{0}";
+    allow-transfer {{ {1}; }};
+    allow-query {{ {2}; }};
+}};
+""", zonename, allowtransfer, allowquery, masters))
+    elif forward == "none":
+        fp.write(str.format("""zone "{0}" {{
+    type slave;
     masters {{ {4}; }};
     file "zonecache.{0}";
     allow-transfer {{ {1}; }};
     allow-query {{ {2}; }};
-    allow-recursion {{ {3}; }};
-}};
-""", zonename, allowtransfer, allowquery, allowrecursion, masters))
-    elif forward == "none":
-        fp.write(str.format("""zone "{0}" {{
-    type slave;
-    masters {{ {5}; }};
-    file "zonecache.{0}";
-    allow-transfer {{ {1}; }};
-    allow-query {{ {2}; }};
-    allow-recursion {{ {3}; }};
     notify explicit;
-    also-notify {{ {4}; }};
+    also-notify {{ {3}; }};
 }};
-""", zonename, allowtransfer, allowquery, allowrecursion, alsonotify, masters))
+""", zonename, allowtransfer, allowquery, alsonotify, masters))
     else:
         fp.write(str.format("""zone "{0}" {{
     type forward;
