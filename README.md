@@ -74,6 +74,10 @@ to ensure they aren't interpreted early.
 
 *fetch*: not honored at generation time, this is *key* with a implied *delay*.
 
+*b64*: encode the following string (usually a YAML block quote) with base64;
+this allows sending things thru metazone that are difficult to quote with
+TXT records.  The string will be automatically decoded on the client side.
+
 
 ATTRIBUTE MAPPING
 
@@ -98,7 +102,8 @@ STANDARD ATTRIBUTE MEANINGS
 
 
 *forward*: boolean indicating this zone should have queries forwarded
-elsewhere.
+elsewhere.  This exists separately from *forward-list* in order to allow
+evaluated expressions to signal true/false simply.
 
 *forward-list*: list of IPs to forward the queries to.  The existence of
 *forward-list* does not imply forwarding is happening EXCEPT in the

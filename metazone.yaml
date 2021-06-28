@@ -59,7 +59,7 @@ defaults:
   zone-list: zones edge_zones
   x-bind-opt: |
     b64:version "None of your beeswax.";
-    
+    edns-udp-size 1432; max-udp-size 1432;
     
 name_server_groups:
   west:
