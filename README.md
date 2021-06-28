@@ -1,10 +1,19 @@
 # metazone
 
 Metazone is based on Paul Vixie's 2006 paper, and somewhat on the catalog
-zones RFC draft.
+zones RFC draft.  See my Lightning talk at DNS-OARC 27:
 
-This is a python3 implementation of ideas I've had regarding metazones
-and is all original.
+https://indico.dns-oarc.net/event/27/contributions/479/
+
+This is a python3 implementation of ideas I've had regarding metazones,
+with a (for now) BIND 9.16+ back end.  The automation around this code isn't
+present, but in a different implementation I used nsnotify from:
+
+https://git.uis.cam.ac.uk/x/uis/ipreg/nsnotifyd.git
+
+...in order to trigger metazone validation and configuration generation
+on a host after the metazone was updated.  Things like staging,
+green/blue rollout, et cetera are not part of this code base.
 
 The YAML describes a set of name servers (which are members of name
 server groups), zone groups, and attributes applied at three levels:
@@ -74,23 +83,24 @@ to ensure they aren't interpreted early.
 
 *fetch*: not honored at generation time, this is *key* with a implied *delay*.
 
-*b64*: encode the following string (usually a YAML block quote) with base64;
-this allows sending things thru metazone that are difficult to quote with
-TXT records.  The string will be automatically decoded on the client side.
+*b64*: encode the remainder of the string (usually in a YAML block quote)
+with base64; this allows sending things thru metazone that are difficult
+to quote with TXT records.  The string will be automatically decoded on
+the client side.
 
 
 ATTRIBUTE MAPPING
 
 
-By default, attributes are represented by TXT resource records, but
-certain attributes are instead represented by APL records as they are
-much more efficient at expressing permission lists.  The negative APL
-syntax is *NOT* supported.
+By default, attributes are represented by TXT resource records,
+but certain attributes are instead represented by APL records (RFC
+3123) as they are much more efficient at expressing permission lists.
+The negative APL syntax is *NOT* supported.
 
 Attributes that are represented by APL records:
 
-allow-query, allow-transfer, allow-notify, allow-recursion, masters,
- also-notify-list, default-forward-list, forward-list
+ allow-query, allow-transfer, allow-notify, allow-recursion, masters,
+  also-notify-list, default-forward-list, forward-list
 
 And some intended for late-binding uses- these are up to you to give
 meaning to and interpret:
