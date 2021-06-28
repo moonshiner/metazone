@@ -112,7 +112,7 @@ for attr in default_cfg.keys():
 
 my_namespace = None
 try:
-    for ns in read_property(zone, MYNAME + "." + ZONE):
+    for ns in read_property(zone, MYNAME):
         my_namespace = ns
 except Exception:
     my_namespace = str(zone.origin)
@@ -221,6 +221,7 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
         for key in default_cfg.keys():
             try:
                 zone_cfg[key] = config_string(zone, key + "." + cz_hash32(zone_name) + "." + my_zone_ns)
+                zone_cfg[key] = str(config_eval(key, zone_cfg, nsg_cfg, default_cfg, my_namespace))  # eval/fetch
             except Exception:
                 pass
 
@@ -246,52 +247,50 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             also_notify = '"' + notify_list_name + '"'
 
         # Handle forward.  Notice there is support for eval conditional
-        will_forward = config_eval('forward', zone_cfg, nsg_cfg, default_cfg, my_namespace)
-        if will_forward is None or will_forward.lower() == "false":
-            forward_list = None
+        will_forward = str(config_eval('forward', zone_cfg, nsg_cfg, default_cfg, my_namespace))
+        if will_forward == '' or will_forward.lower() == "false":
+            forward_list = ''
         else:
-            local_forward_list = config_eval("local-forward-list", zone_cfg, nsg_cfg, default_cfg, my_namespace)
-            if local_forward_list is None or local_forward_list.lower() == "none":
-                forward_list = config_lookup("forward-list", zone_cfg, nsg_cfg, default_cfg)
-                if forward_list is not None:
+            local_forward_list = str(config_eval("local-forward-list", zone_cfg, nsg_cfg, default_cfg, my_namespace))
+            if local_forward_list == '' or local_forward_list.lower() == "none":
+                forward_list = config_eval("forward-list", zone_cfg, nsg_cfg, default_cfg, my_namespace)
+                if forward_list != '':
                     forward_list = break_apl_singleset(forward_list)
             else:
                 forward_list = break_apl_singleset(local_forward_list)
 
         # Handle query.
-        allow_query = config_lookup("allow-query", zone_cfg, nsg_cfg, default_cfg)
-        if allow_query is None or allow_query.lower() == "none":
+        allow_query = str(config_eval("allow-query", zone_cfg, nsg_cfg, default_cfg, my_namespace))
+        if allow_query == '' or allow_query.lower() == "none":
             allow_query = "none"
         else:
             allow_query = break_apl_netset(allow_query)
             allow_query = fixup_acl(allow_query)
-        if allow_query is not None and allow_query != "none" and allow_query != "any":
+        if allow_query != '' and allow_query != "none" and allow_query != "any":
             acl_name = gen_acl_name('query', allow_query, mz_inc, acllists)
             allow_query = '"' + acl_name + '"'
 
         # Handle recursion.
-        allow_recursion = config_lookup("allow-recursion", zone_cfg, nsg_cfg, default_cfg)
-        if allow_recursion is None or allow_recursion.lower() == "none":
+        allow_recursion = config_eval("allow-recursion", zone_cfg, nsg_cfg, default_cfg, my_namespace)
+        if allow_recursion == '' or allow_recursion.lower() == "none":
             allow_recursion = "none"
         else:
             allow_recursion = break_apl_netset(allow_recursion)
             allow_recursion = fixup_acl(allow_recursion)
-        if allow_recursion is not None and allow_recursion != "none" and allow_recursion != "any":
+        if allow_recursion != '' and allow_recursion != "none" and allow_recursion != "any":
             acl_name = gen_acl_name('recursion', allow_recursion, mz_inc, acllists)
             allow_recursion = '"' + acl_name + '"'
 
         # Handle transfer.
-        allow_transfer = config_lookup("allow-transfer", zone_cfg, nsg_cfg, default_cfg)
-        if allow_transfer is None or allow_transfer.lower() == "none":
+        allow_transfer = config_eval("allow-transfer", zone_cfg, nsg_cfg, default_cfg, my_namespace)
+        if allow_transfer == '' or allow_transfer.lower() == "none":
             allow_transfer = "none"
         else:
             allow_transfer = break_apl_netset(allow_transfer)
             allow_transfer = fixup_acl(allow_transfer)
-        if allow_transfer is not None and allow_transfer != "none" and allow_transfer != "any":
+        if allow_transfer != '' and allow_transfer != "none" and allow_transfer != "any":
             acl_name = gen_acl_name('transfer', allow_transfer, mz_inc, acllists)
             allow_transfer = '"' + acl_name + '"'
-
-        # Handle transfer.
 
         # and now, the zone goes.
         emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_recursion, allow_transfer)

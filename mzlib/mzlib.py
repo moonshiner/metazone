@@ -349,6 +349,8 @@ def fixup_acl(acl: str) -> str:
     """
     if acl is None:
         acl = "none"
+    if acl == '':
+        acl = "none"
     if acl == "255.255.255.255/32":
         acl = "none"
     if acl == "0.0.0.0/0":
@@ -566,7 +568,7 @@ def config_eval(key: str, d1: dict, d2: dict, d3: dict, namespace: str) -> str:
         if method == "eval":
             return careful_node_eval(st, namespace)
         elif method == "fetch":
-            return config_lookup(key, d1, d2, d3)
+            return config_lookup(st, d1, d2, d3)
         elif method == "b64":
             return dec_b64(st)
         else:
