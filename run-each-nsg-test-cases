@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+#
+# LM: 2021-06-30 15:03:49-07:00
+# Shawn Instenes
+#
+# From any given metazone, test configuration of a single member of every
+# Name Server Group.
+#
+#
+
+sudo id  # doing this to prime sudo for all the named-checkconfs in a moment
+
+printf "\nTesting syntax of configuration generated for a member of each Name Server Group:\n\n"
+lastnsg=''
+for ip in $(awk '/DNAME/{print $1}' test.mz); do
+nsg=$(awk "/DNAME/ && /${ip}/ {print \$NF;}" test.mz)
+if [ "${nsg}x" != "${lastnsg}x" ]; then
+	echo -n "${ip} - NSG is ${nsg}- "
+	lastnsg="${nsg}"
+	./bind_mz.py --file=test.mz --host $ip --debug
+	(sudo named-checkconf -t `pwd` -c example_named.conf && echo "ok ") || echo "failed check "
+fi
+done
+echo ''
+exit 0

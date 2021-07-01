@@ -18,3 +18,9 @@ test: test.mz
 
 testdbg: test.mz
 	pudb3 ./bind_mz.py --file=test.mz --host 180.236.121.59 --debug
+
+testall: test.mz
+	./run-all-nsg-test-cases
+
+testnsg: test.mz
+	./run-all-nsg-test-cases
