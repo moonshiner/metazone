@@ -1,3 +1,4 @@
+---
 version: 3
 host_search_path: prod.example.com. dev.example.com.
 
@@ -8,118 +9,117 @@ zone_groups:
 
 dns_servers:
     west:
-      - host:ns1-west
-      - host:ns2-west
-      - host:ns3-west
-      - host:ns4-west
+        - host:ns1-west
+        - host:ns2-west
+        - host:ns3-west
+        - host:ns4-west
     west_edge:
-      - host:proxy1-west
-      - host:proxy2-west
-      - host:proxy3-west
-      - host:proxy4-west
+        - host:proxy1-west
+        - host:proxy2-west
+        - host:proxy3-west
+        - host:proxy4-west
     east:
-      - host:ns1-east
-      - host:ns2-east
-      - host:ns3-east
-      - host:ns4-east
+        - host:ns1-east
+        - host:ns2-east
+        - host:ns3-east
+        - host:ns4-east
     east_edge:
-      - host:proxy1-east
-      - host:proxy2-east
+        - host:proxy1-east
+        - host:proxy2-east
     south:
-      - host:ns1-south
-      - host:ns2-south
-      - host:ns3-south
-      - host:ns4-south
+        - host:ns1-south
+        - host:ns2-south
+        - host:ns3-south
+        - host:ns4-south
     south_edge:
-      - host:proxy1-south
-      - host:proxy2-south
+        - host:proxy1-south
+        - host:proxy2-south
     admin:
-      - host:dns-manager
- 
+        - host:dns-manager
+
 dns_clients:
-  west_net:
-    - 10.1.0.0/16
-  east_net:
-    - 10.2.0.0/16
+    west_net:
+        - 10.1.0.0/16
+    east_net:
+        - 10.2.0.0/16
 
 defaults:
-  masters: 10.1.2.3
-  notify: false
-  also-notify-list: 127.0.0.1
-  allow-query: 10.0.0.0/8
-  allow-recursion: 10.0.0.0/8
-  allow-transfer: collect:dns_servers
-  forward: false
-  forward-list: none
-  default-forward: false
-  default-forward-list: none
-  forward-list: none
-  local-forward-list: none   # for nsg-local routing
-  local-bridge: 127.0.0.1
-  zone-list: zones edge_zones
-  x-bind-opt: |
-    b64:version "None of your beeswax.";
-    edns-udp-size 1432; max-udp-size 1432;
-    
+    masters: 10.1.2.3
+    notify: false
+    also-notify-list: 127.0.0.1
+    allow-query: 10.0.0.0/8
+    allow-recursion: 10.0.0.0/8
+    allow-transfer: collect:dns_servers
+    forward: false
+    forward-list: none
+    default-forward: false
+    default-forward-list: none
+    local-forward-list: none   # for nsg-local routing
+    local-bridge: 127.0.0.1
+    zone-list: zones edge_zones
+    x-bind-opt: |
+      b64:version "None of your beeswax.";
+      edns-udp-size 1432; max-udp-size 1432;
+
 name_server_groups:
-  west:
-    masters: host:dns-source-west
-    allow-query: collect:dns_clients/west_net collect:dns_clients/east_net
-    members: collect:dns_servers/west
-    zone-list: zones bridge_zones edge_zones
-    default-forward: True
-    default-forward-list: collect:dns_servers/west_edge
-    notify: True
-    also-notify-list: collect:dns_servers/west_edge
-    local-bridge: host:dns-bridge-west
-  west_edge:
-    masters: collect:dns_servers/west
-    allow-query: collect:dns_servers/west
-    zone-list: edge_zones
-    members: collect:dns_servers/west_edge
-  east:
-    masters: host:dns-source-east
-    allow-query: collect:dns_clients/east_net
-    members: collect:dns_servers/east
-    zone-list: zones bridge_zones edge_zones
-    default-forward: True
-    default-forward-list: collect:dns_servers/east_edge
-    notify: True
-    also-notify-list: collect:dns_servers/east_edge
-    local-bridge: host:dns-bridge-east
-  east_edge:
-    masters: collect:dns_servers/east
-    allow-query: collect:dns_servers/east
-    zone-list: edge_zones
-    members: collect:dns_servers/east_edge
-  south:
-    masters: host:dns-source-south
-    allow-query: collect:dns_clients/east_net
-    members: collect:dns_servers/south
-    default-forward: True
-    default-forward-list: collect:dns_servers/east_edge
-    local-bridge: host:dns-bridge-south
- 
+    west:
+        masters: host:dns-source-west
+        allow-query: collect:dns_clients/west_net collect:dns_clients/east_net
+        members: collect:dns_servers/west
+        zone-list: zones bridge_zones edge_zones
+        default-forward: true
+        default-forward-list: collect:dns_servers/west_edge
+        notify: true
+        also-notify-list: collect:dns_servers/west_edge
+        local-bridge: host:dns-bridge-west
+    west_edge:
+        masters: collect:dns_servers/west
+        allow-query: collect:dns_servers/west
+        zone-list: edge_zones
+        members: collect:dns_servers/west_edge
+    east:
+        masters: host:dns-source-east
+        allow-query: collect:dns_clients/east_net
+        members: collect:dns_servers/east
+        zone-list: zones bridge_zones edge_zones
+        default-forward: true
+        default-forward-list: collect:dns_servers/east_edge
+        notify: true
+        also-notify-list: collect:dns_servers/east_edge
+        local-bridge: host:dns-bridge-east
+    east_edge:
+        masters: collect:dns_servers/east
+        allow-query: collect:dns_servers/east
+        zone-list: edge_zones
+        members: collect:dns_servers/east_edge
+    south:
+        masters: host:dns-source-south
+        allow-query: collect:dns_clients/east_net
+        members: collect:dns_servers/south
+        default-forward: true
+        default-forward-list: collect:dns_servers/east_edge
+        local-bridge: host:dns-bridge-south
+
 edge_zones:
-  rpz.example.com:
- 
+    rpz.example.com:
+
 bridge_zones:
-  east.bridge.example.com:
-    forward: delay:eval:nsg!='east'
-    local-forward-list: fetch:local-bridge
-  west.bridge.example.com:
-    forward: delay:eval:nsg!='west'
-    local-forward-list: fetch:local-bridge
-  south.bridge.example.com:
-    forward: delay:eval:nsg!='south'
-    local-forward-list: fetch:local-bridge
+    east.bridge.example.com:
+        forward: delay:eval:nsg!='east'
+        local-forward-list: fetch:local-bridge
+    west.bridge.example.com:
+        forward: delay:eval:nsg!='west'
+        local-forward-list: fetch:local-bridge
+    south.bridge.example.com:
+        forward: delay:eval:nsg!='south'
+        local-forward-list: fetch:local-bridge
 
 zones:
-  prod.example.com:
-  dev.example.com:
-  data.example.com:
-  ci.example.com:
-    masters: 10.2.3.4 10.2.3.6
-  west.slb.example.com:
-    forward: true
-    forward-list: 10.250.1.1
+    prod.example.com:
+    dev.example.com:
+    data.example.com:
+    ci.example.com:
+        masters: 10.2.3.4 10.2.3.6
+    west.slb.example.com:
+        forward: true
+        forward-list: 10.250.1.1

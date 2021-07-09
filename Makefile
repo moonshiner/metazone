@@ -23,4 +23,4 @@ testall: test.mz
 	./run-all-nsg-test-cases
 
 testnsg: test.mz
-	./run-all-nsg-test-cases
+	./run-each-nsg-test-cases
