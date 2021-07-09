@@ -1,3 +1,4 @@
+---
 version: 3
 host_search_path: prod.example.com. dev.example.com.
 
@@ -35,7 +36,7 @@ dns_servers:
         - host:proxy2-south
     admin:
         - host:dns-manager
- 
+
 dns_clients:
     west_net:
         - 10.1.0.0/16
@@ -50,25 +51,25 @@ defaults:
     allow-recursion: 10.0.0.0/8
     allow-transfer: collect:dns_servers
     forward: false
+    forward-list: none
     default-forward: false
     default-forward-list: none
-    forward-list: none
     local-forward-list: none   # for nsg-local routing
     local-bridge: 127.0.0.1
     zone-list: zones edge_zones
     x-bind-opt: |
-        b64:version "None of your beeswax.";
-        edns-udp-size 1432; max-udp-size 1432;
-    
+      b64:version "None of your beeswax.";
+      edns-udp-size 1432; max-udp-size 1432;
+
 name_server_groups:
     west:
         masters: host:dns-source-west
         allow-query: collect:dns_clients/west_net collect:dns_clients/east_net
         members: collect:dns_servers/west
         zone-list: zones bridge_zones edge_zones
-        default-forward: True
+        default-forward: true
         default-forward-list: collect:dns_servers/west_edge
-        notify: True
+        notify: true
         also-notify-list: collect:dns_servers/west_edge
         local-bridge: host:dns-bridge-west
     west_edge:
@@ -81,9 +82,9 @@ name_server_groups:
         allow-query: collect:dns_clients/east_net
         members: collect:dns_servers/east
         zone-list: zones bridge_zones edge_zones
-        default-forward: True
+        default-forward: true
         default-forward-list: collect:dns_servers/east_edge
-        notify: True
+        notify: true
         also-notify-list: collect:dns_servers/east_edge
         local-bridge: host:dns-bridge-east
     east_edge:
@@ -95,13 +96,13 @@ name_server_groups:
         masters: host:dns-source-south
         allow-query: collect:dns_clients/east_net
         members: collect:dns_servers/south
-        default-forward: True
+        default-forward: true
         default-forward-list: collect:dns_servers/east_edge
         local-bridge: host:dns-bridge-south
 
 edge_zones:
     rpz.example.com:
- 
+
 bridge_zones:
     east.bridge.example.com:
         forward: delay:eval:nsg!='east'
