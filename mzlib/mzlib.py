@@ -16,7 +16,7 @@ import io
 #
 # mzlib: functions helpful for metazone creation/interpretation
 #
-# LM: 2021-06-27 09:43:42-07:00
+# LM: 2021-08-03 13:55:33-07:00
 # Shawn Instenes <sinstenes@gmail.com>
 #
 #
@@ -378,6 +378,25 @@ def emit_masters(fp: io.IOBase, aclname: str, acllist: str) -> None:
     for itm in lines:
         fp.write("\n " + itm)
     fp.write(";\n};\n\n")
+
+
+def emit_zone_local(fp: io.IOBase, zonename: str, content: str, allowquery: str, allowtransfer: str) -> None:
+    """
+    Produces BIND-compatible zone stanza, but the zone content is provided
+    """
+    allowquery = fixup_acl(allowquery)
+    allowtransfer = fixup_acl(allowtransfer)
+    fp.write(str.format("""zone "{0}" {{
+    type master;
+    file "zone.mastered.{0}";
+    allow-transfer {{ {1}; }};
+    allow-query {{ {2}; }};
+}};
+""", zonename, allowtransfer, allowquery))
+    # Now, write the zone file.
+    zonef = open(str.format("zone.mastered.{0}", zonename), "w")
+    zonef.write(content)
+    zonef.close()
 
 
 def emit_zone(fp: io.IOBase, zonename: str, masters: str, forward: str, alsonotify: str, allowquery: str, allowtransfer: str) -> None:

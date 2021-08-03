@@ -1,12 +1,12 @@
 #
-# LM: 2021-06-26 17:35:47-07:00
+# LM: 2021-08-03 14:29:13-07:00
 # Shawn Instenes <sinstenes@gmail.com>
 # 
 # Primitive test harness for metazone.
 #
 
 clean:
-	rm -f metainc.conf metaopts.conf metazone.conf test.mz
+	rm -f metainc.conf metaopts.conf metazone.conf test.mz zone.mastered.*
 
 
 test.mz: metazone.yaml

@@ -8,13 +8,13 @@ import sys
 from mzlib import gather_a, read_property, config_eval, config_lookup
 from mzlib import break_apl_singleset, fixup_acl, gen_acl_hash, emit_masters
 from mzlib import emit_acl, break_apl_netset, config_string, cz_hash32
-from mzlib import gen_masters_name, gen_acl_name, emit_zone
+from mzlib import gen_masters_name, gen_acl_name, emit_zone, emit_zone_local
 
 #
 #
 # bind_mz: Generate appropriate BIND 9.16+ configuration based on metazone
 #
-# LM: 2021-06-25 13:38:38-07:00
+# LM: 2021-08-03 14:26:58-07:00
 # Shawn Instenes <sinstenes@gmail.com>
 #
 #
@@ -282,7 +282,10 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             allow_transfer = '"' + acl_name + '"'
 
         # and now, the zone goes.
-        emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_transfer)
-
+        zonecontent = config_eval("content", zone_cfg, nsg_cfg, null_cfg, my_namespace)  # ignore defaults for zone content
+        if zonecontent != '':
+            emit_zone_local(mz_zone, zone_name, zonecontent, allow_query, allow_transfer)
+        else:
+            emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_transfer)
 
 # END OF LINE
