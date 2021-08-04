@@ -14,7 +14,7 @@ from mzlib import gen_masters_name, gen_acl_name, emit_zone, emit_zone_local
 #
 # bind_mz: Generate appropriate BIND 9.16+ configuration based on metazone
 #
-# LM: 2021-08-03 14:26:58-07:00
+# LM: 2021-08-03 17:17:52-07:00
 # Shawn Instenes <sinstenes@gmail.com>
 #
 #
@@ -282,9 +282,9 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
             allow_transfer = '"' + acl_name + '"'
 
         # and now, the zone goes.
-        zonecontent = config_eval("content", zone_cfg, nsg_cfg, null_cfg, my_namespace)  # ignore defaults for zone content
+        zonecontent = config_eval("content", zone_cfg, null_cfg, null_cfg, my_namespace)  # ignore anything but zone-level for content
         if zonecontent != '':
-            sd = dict(nsg=my_namespace)
+            sd = dict(nsg=my_namespace, name=zone_name)
             emit_zone_local(mz_zone, zone_name, zonecontent, allow_query, allow_transfer, sd)
         else:
             emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_transfer)
