@@ -1,11 +1,26 @@
 ---
+#
+# These YAML keys must exist.
+#
 version: 3
 host_search_path: prod.example.com. dev.example.com.
 
+#
+# List all zone groups that will be mentioned by defaults or NSGs.
+# Required YAML key.
+#
 zone_groups:
     - zones
     - edge_zones
     - bridge_zones
+
+#
+# Group together DNS servers, so "collect:dns_servers" will get them
+# all at once.  "collect:dns_servers/west" will get just the ones for
+# the 'west' Name Server Group, and so on.
+#
+# Not required, but nice to have.
+#
 
 dns_servers:
     west:
@@ -37,12 +52,21 @@ dns_servers:
     admin:
         - host:dns-manager
 
+
+#
+# Not required, nice to have.
+#
 dns_clients:
     west_net:
         - 10.1.0.0/16
     east_net:
         - 10.2.0.0/16
 
+#
+# Required YAML key, 'defaults'.  Defines all the supported attributes,
+# and their global defaults.  Some of these are expressed as APL records and some
+# as TXT records- mapping of attribute to APL type is handled in map_rrtype in the library.
+#
 defaults:
     masters: 10.1.2.3
     notify: false
@@ -62,6 +86,15 @@ defaults:
       b64:version "None of your beeswax.";
       edns-udp-size 1432; max-udp-size 1432;
 
+#
+# Required YAML key.
+#
+# Defines each NSG and overrides defaults for the group.
+#
+# Host membership in a NSG is defined by the "members" attribute, which is only used for
+# NSG membership and doesn't have to be defined by "defaults".
+#
+#
 name_server_groups:
     west:
         masters: host:dns-source-west
@@ -101,6 +134,17 @@ name_server_groups:
         default-forward-list: collect:dns_servers/east_edge
         local-bridge: host:dns-bridge-south
 
+#
+# Inline zone templating- these zones are always locally mastered by the name servers.
+# In metazone, they are expressed by block quotes and should always be sent via the
+# b64: method.
+#
+# Supported variables:
+# $name - zone name
+# $nsg  - name server group name
+# $time - UTC time in ISO format
+#
+
 edge_zones:
     rpz.example.com:
         content: |
@@ -108,6 +152,19 @@ edge_zones:
           @ IN NS ns1.example.com.
           badactor.foo.com IN CNAME .
           @ IN TXT "Generated $time for $nsg: $name"
+
+#
+# The pattern "delay:eval:nsg!='east'" tells metazone: If you are a
+# nameserver in the "east" name server group (NSG), you are not fowarding
+# queries (forward evaluates to False), instead, you are a secondary for
+# the zone (with masters inherited from the NSG or default)- the
+# local-forward-list is ignored. If you are a nameserver NOT in the
+# "east" NSG, then forward queries to the server set mentioned by the
+# local-bridge attribute, which is late binding due to the "fetch" method.
+#
+# local-forward-list is not encoded by a APL record, so is more suited for conditional
+# evaluation, and overrides forward-list if it exists.
+#
 
 bridge_zones:
     east.bridge.example.com:
@@ -119,6 +176,7 @@ bridge_zones:
     south.bridge.example.com:
         forward: delay:eval:nsg!='south'
         local-forward-list: fetch:local-bridge
+
 
 zones:
     local.example.com:
