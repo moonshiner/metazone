@@ -30,12 +30,11 @@ repeatable answers to A/AAAA queries.
 REQUIRED YAML ENTRIES:
 
 
-version
-host_search_path
-defaults
-zone_groups
-dns_servers
-name_server_groups
+* version
+* host_search_path
+* defaults
+* zone_groups
+* name_server_groups
 
 
 OPTIONAL ENTRIES:
@@ -44,9 +43,10 @@ OPTIONAL ENTRIES:
 Almost anything, but unless referenced by something in the required
 entries, they'll be ignored.  Examples of useful optional entries:
 
-host_lists
-dns_clients
-zone_lists
+* host_lists
+* dns_servers
+* dns_clients
+* zone_lists
 
 
 
@@ -127,9 +127,11 @@ of a single NSG.  NSG attributes override defaults.
 
 *default-forward*: Is there a forward of last resort (for name spaces the
 server isn't authoritativve for)?
+
 *default-forward-list*: List of IPs to forward unknown name spaces to for
 resolution.  This could be a set of public DNS proxies somewhere at the data
 center edge.
+
 *zone-list*: Applied at default and NSG levels, this is a list of zone lists
 that should be included in the name server configuration (at default: all
 servers) or (at NSG: for the members of the NSG)
