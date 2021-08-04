@@ -284,7 +284,8 @@ for zonelist in (config_lookup('zone-list', null_cfg, nsg_cfg, default_cfg)).spl
         # and now, the zone goes.
         zonecontent = config_eval("content", zone_cfg, nsg_cfg, null_cfg, my_namespace)  # ignore defaults for zone content
         if zonecontent != '':
-            emit_zone_local(mz_zone, zone_name, zonecontent, allow_query, allow_transfer)
+            sd = dict(nsg=my_namespace)
+            emit_zone_local(mz_zone, zone_name, zonecontent, allow_query, allow_transfer, sd)
         else:
             emit_zone(mz_zone, zone_name, mstr_line, forward_list, also_notify, allow_query, allow_transfer)
 

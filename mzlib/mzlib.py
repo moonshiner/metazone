@@ -12,6 +12,7 @@ import yaml
 import textwrap
 import sys
 import io
+from string import Template
 
 #
 # mzlib: functions helpful for metazone creation/interpretation
@@ -380,7 +381,7 @@ def emit_masters(fp: io.IOBase, aclname: str, acllist: str) -> None:
     fp.write(";\n};\n\n")
 
 
-def emit_zone_local(fp: io.IOBase, zonename: str, content: str, allowquery: str, allowtransfer: str) -> None:
+def emit_zone_local(fp: io.IOBase, zonename: str, content: str, allowquery: str, allowtransfer: str, sd: dict) -> None:
     """
     Produces BIND-compatible zone stanza, but the zone content is provided
     """
@@ -395,7 +396,8 @@ def emit_zone_local(fp: io.IOBase, zonename: str, content: str, allowquery: str,
 """, zonename, allowtransfer, allowquery))
     # Now, write the zone file.
     zonef = open(str.format("zone.mastered.{0}", zonename), "w")
-    zonef.write(content)
+    tplate = Template(content)
+    zonef.write(tplate.substitute(sd))
     zonef.close()
 
 

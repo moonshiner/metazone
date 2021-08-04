@@ -120,6 +120,11 @@ bridge_zones:
         local-forward-list: fetch:local-bridge
 
 zones:
+    local.example.com:
+        content: |
+          b64:@ IN SOA     ns1.example.com. dns-admin.example.com. 1 900 900 1800 60
+          @ IN NS ns1.example.com.
+          @ IN DNAME svc.$nsg.example.com.
     prod.example.com:
     dev.example.com:
     data.example.com:
