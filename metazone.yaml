@@ -191,6 +191,16 @@ zones:
           @ IN NS ns1.example.com.
           @ IN DNAME svc.$nsg.example.com.
           @ IN TXT "Generated $time for $nsg: $name"
+    # Region- south
+    # We have a general zone, and another mapped to local/svc zones by apex DNAME
+    south.example.com:
+    svc.south.example.com:
+    # west 
+    west.example.com:
+    svc.west.example.com:
+    # east
+    east.example.com:
+    svc.east.example.com:
     prod.example.com:
     dev.example.com:
     data.example.com:
