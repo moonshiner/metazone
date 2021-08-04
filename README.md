@@ -49,6 +49,13 @@ entries, they'll be ignored.  Examples of useful optional entries:
 * zone_lists
 
 
+ATTRIBUTES
+
+The global :default: attribute list defines all honored attributes; they
+will be looked for also at the :name-server-group: and :zone: levels, which
+will override the defaults.  Some attributes are global only (:default-forward:)
+as they describe server wide configuration.  Some attributes are local to
+single zones (:contents:), as setting a default makes little sense.
 
 ATTRIBUTE METHODS
 
@@ -135,4 +142,14 @@ center edge.
 *zone-list*: Applied at default and NSG levels, this is a list of zone lists
 that should be included in the name server configuration (at default: all
 servers) or (at NSG: for the members of the NSG)
+
+*content*: Applied only at the zone level, this indicates the zone
+should be mastered locally, and the content of the RFC-1035 zone format
+is included.  Limited template support (python3's string.Template)
+is implemented.  The example in metazone.yaml implements a DNAME-based
+redirection of a single name space to different sub zones, based on
+name server group.  This would allow local resources to have a globally
+shared name, for example puppet.local.example.com. would resolve to
+puppet.svc.<name server group>.example.com., and that name could have
+a local answer.
 
