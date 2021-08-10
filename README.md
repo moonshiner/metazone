@@ -150,6 +150,6 @@ is implemented.  The example in metazone.yaml implements a DNAME-based
 redirection of a single name space to different sub zones, based on
 name server group.  This would allow local resources to have a globally
 shared name, for example puppet.local.example.com. would resolve to
-puppet.svc.<name server group>.example.com., and that name could have
+puppet.svc.*name server group*.example.com., and that name could have
 a local answer.
 
