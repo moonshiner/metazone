@@ -1,0 +1,6 @@
+---
+content: |
+      b64:@ IN SOA     ns1.example.com. dns-admin.example.com. 1 900 900 1800 60
+      @ IN NS ns1.example.com.
+      @ IN DNAME svc.$nsg.example.com.
+      @ IN TXT "Generated $time for $nsg: $name"

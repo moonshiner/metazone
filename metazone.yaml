@@ -4,6 +4,7 @@
 #
 version: 3
 host_search_path: prod.example.com. dev.example.com.
+comment: Created by a v3 test file, version 2021-08-18 11:36:47-07:00
 
 #
 # List all zone groups that will be mentioned by defaults or NSGs.
@@ -147,11 +148,7 @@ name_server_groups:
 
 edge_zones:
     rpz.example.com:
-        content: |
-          b64:@ IN SOA     ns1.example.com. dns-admin.example.com. 1 900 900 1800 60
-          @ IN NS ns1.example.com.
-          badactor.foo.com IN CNAME .
-          @ IN TXT "Generated $time for $nsg: $name"
+        !include rpz.template.yaml
 
 #
 # The pattern "delay:eval:nsg!='east'" tells metazone: If you are a
@@ -180,17 +177,9 @@ bridge_zones:
 
 zones:
     local.example.com:
-        content: |
-          b64:@ IN SOA     ns1.example.com. dns-admin.example.com. 1 900 900 1800 60
-          @ IN NS ns1.example.com.
-          @ IN DNAME svc.$nsg.example.com.
-          @ IN TXT "Generated $time for $nsg: $name"
+        !include local.template.yaml
     svc.example.com:
-        content: |
-          b64:@ IN SOA     ns1.example.com. dns-admin.example.com. 1 900 900 1800 60
-          @ IN NS ns1.example.com.
-          @ IN DNAME svc.$nsg.example.com.
-          @ IN TXT "Generated $time for $nsg: $name"
+        !include local.template.yaml
     # Region- south
     # We have a general zone, and another mapped to local/svc zones by apex DNAME
     south.example.com:
